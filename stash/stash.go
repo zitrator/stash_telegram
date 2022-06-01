@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "error"
+	_ "errors"
 	"fmt"
 	"sync"
 )
