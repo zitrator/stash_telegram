@@ -1,6 +1,15 @@
 package main
 
-import "fmt"
+import (
+	_ "error"
+	"fmt"
+	"sync"
+)
+
+type Stash struct {
+	sync.RWMutex
+	m map[string]string
+}
 
 // Stash entry point
 func main() {
