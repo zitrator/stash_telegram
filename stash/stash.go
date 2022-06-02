@@ -1,17 +1,32 @@
 package main
 
 import (
-	_ "errors"
+	"encoding/json"
 	"fmt"
 	"sync"
 )
 
+// Stash in-memory storage
+// todo: transaction log
+// todo: encrypt data on disk
 type Stash struct {
 	sync.RWMutex
 	m map[string]string
 }
 
-// Stash entry point
+var jsonData = []byte("{ \"name\":\"patrik\", \"age\":10 }")
+
 func main() {
-	fmt.Println("vim-go")
+	var f interface{}
+	err := json.Unmarshal(jsonData, &f)
+
+	if err != nil {
+		fmt.Println("err")
+	}
+
+	mj := f.(map[string]interface{})
+	fmt.Println(f)
+	fmt.Println(mj["name"])
+	fmt.Println(mj["age"])
+	fmt.Println(mj["none"])
 }
