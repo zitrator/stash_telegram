@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="roman@192.168.1.101:22" type="ssh/sftp" uuid="5132e866-6bab-44f6-8425-b0fb4f3723d3">
+        <config>
+          <option name="projectRootOnTarget" value="/home/roman/stash_telegram" />
+          <option name="serverName" value="roman@192.168.1.101:22 password" />
+        </config>
+        <ContributedStateBase type="GoLanguageRuntime">
+          <config>
+            <option name="goPath" value="/home/roman/go" />
+            <option name="goRoot" value="/usr/bin/go" />
+            <option name="goVersion" value="go1.18.1 linux/amd64" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>
