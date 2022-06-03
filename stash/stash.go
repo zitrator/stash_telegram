@@ -9,6 +9,8 @@ import (
 
 // Stash in-memory storage
 type Stash struct {
+	// TODO: implement io.Reader
+	// TODO: implement io.Writer
 	sync.RWMutex
 	m map[string]interface{}
 }
