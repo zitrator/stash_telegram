@@ -1,6 +1,9 @@
 package stash
 
-// todo: encrypt data on disk
+// TODO:
+//	encrypt data on disk
+// 	implement io.Reader
+// 	implement io.Writer
 
 import (
 	"errors"
@@ -9,16 +12,14 @@ import (
 
 // Stash in-memory storage
 type Stash struct {
-	// TODO: implement io.Reader
-	// TODO: implement io.Writer
 	sync.RWMutex
-	m map[string]interface{}
+	m map[string]string
 }
 
 // NewStash constructor
 func NewStash() *Stash {
 	return &Stash{
-		m: make(map[string]interface{}),
+		m: make(map[string]string),
 	}
 }
 
@@ -26,9 +27,9 @@ func NewStash() *Stash {
 var ErrorNoSuchKey = errors.New("no such key")
 
 // Put data in Stash
-func (s *Stash) Put(key string, doc interface{}) error {
+func (s *Stash) Put(key, data string) error {
 	s.Lock()
-	s.m[key] = doc
+	s.m[key] = data
 	s.Unlock()
 
 	// TODO: transaction log
@@ -36,15 +37,15 @@ func (s *Stash) Put(key string, doc interface{}) error {
 }
 
 // Get data from Stash
-func (s *Stash) Get(key string) (interface{}, error) {
+func (s *Stash) Get(key string) (string, error) {
 	s.RLock()
-	doc, ok := s.m[key]
+	value, ok := s.m[key]
 	s.RUnlock()
 	if !ok {
-		return nil, ErrorNoSuchKey
+		return "", ErrorNoSuchKey
 	}
 
-	return doc, nil
+	return value, nil
 }
 
 // Delete data from stash
