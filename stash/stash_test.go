@@ -6,11 +6,13 @@ import (
 )
 
 var config quick.Config
+var stash *Stash
 
-// TODO: one stash on all test
+func init() {
+	stash = NewStash()
+}
 
 func TestStash_Put(t *testing.T) {
-	stash := NewStash()
 	// store data
 	f := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -25,8 +27,7 @@ func TestStash_Put(t *testing.T) {
 }
 
 func TestStash_Get(t *testing.T) {
-	stash := NewStash()
-	// store data
+	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
 		if ok != nil {
@@ -34,7 +35,7 @@ func TestStash_Get(t *testing.T) {
 		}
 		return true
 	}
-	// get data
+	// get the data
 	get := func(key, val string) bool {
 		res, ok := stash.Get(key)
 		if ok != nil || res != val {
@@ -49,8 +50,7 @@ func TestStash_Get(t *testing.T) {
 }
 
 func TestStash_Delete(t *testing.T) {
-	stash := NewStash()
-	// store data
+	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
 		if ok != nil {
@@ -58,12 +58,13 @@ func TestStash_Delete(t *testing.T) {
 		}
 		return true
 	}
-	// del data
+	// delete the data
 	del := func(key, val string) bool {
 		ok := stash.Delete(key)
 		if ok != nil {
 			return false
 		}
+		// check that the data is deleted
 		_, ok = stash.Get(key)
 		if ok == nil {
 			return false
