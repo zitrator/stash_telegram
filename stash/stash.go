@@ -1,13 +1,14 @@
 package stash
 
-// TODO:
-//	encrypt data on disk
-// 	implement io.Reader
-// 	implement io.Writer
+import (
+	"encoding/json"
+	"sync"
+)
+
+// TODO: encrypt data o
 
 import (
 	"errors"
-	"sync"
 )
 
 // Stash in-memory storage
@@ -21,6 +22,18 @@ func NewStash() *Stash {
 	return &Stash{
 		m: make(map[string]string),
 	}
+}
+
+// Read implement io.Reader
+func (s *Stash) Read(p []byte) (n int, err error) {
+	err = json.Unmarshal(p, &s.m)
+	return len(p), err
+}
+
+// Write implement io.Writer
+func (s *Stash) Write(p []byte) (n int, err error) {
+	p, err = json.Marshal(s.m)
+	return len(p), err
 }
 
 // ErrorNoSuchKey predefined error

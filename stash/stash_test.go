@@ -1,6 +1,7 @@
 package stash
 
 import (
+	"fmt"
 	"testing"
 	"testing/quick"
 )
@@ -73,6 +74,32 @@ func TestStash_Delete(t *testing.T) {
 	}
 
 	if err := quick.CheckEqual(put, del, &config); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestStash_Read(t *testing.T) {
+	s := []byte("{\"key1\":\"val1\",\"key2\":\"100\"}")
+	_, err := stash.Read(s)
+	if err != nil {
+		t.Error(err)
+	}
+	if stash.m["key1"] != "val1" && stash.m["key2"] != "100" {
+		t.Error("Read wrong data")
+	}
+}
+
+func TestStash_Write(t *testing.T) {
+	err := stash.Put("key1", "value1")
+	if err != nil {
+		t.Error(err)
+	}
+	err = stash.Put("key2", "value2")
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = fmt.Fprintln(stash)
+	if err != nil {
 		t.Error(err)
 	}
 }
