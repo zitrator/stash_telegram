@@ -2,6 +2,8 @@ package stash
 
 import (
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"sync"
 )
 
@@ -24,16 +26,35 @@ func NewStash() *Stash {
 	}
 }
 
-// Read implement io.Reader
-func (s *Stash) Read(p []byte) (n int, err error) {
-	err = json.Unmarshal(p, &s.m)
-	return len(p), err
+// marshal read from Stash into p
+func (s *Stash) marshal() (p []byte, err error) {
+	p, err = json.Marshal(s.m)
+	return p, err
 }
 
-// Write implement io.Writer
-func (s *Stash) Write(p []byte) (n int, err error) {
-	p, err = json.Marshal(s.m)
-	return len(p), err
+// unmarshal from p to the Stash
+func (s *Stash) unmarshal(p []byte) (err error) {
+	err = json.Unmarshal(p, &s.m)
+	return err
+}
+
+// Backup data
+func (s *Stash) Backup(w io.Writer) error {
+	p, err := s.marshal()
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(p)
+	return nil
+}
+
+func (s *Stash) Restore(r io.Reader) (err error) {
+	p, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	err = s.unmarshal(p)
+	return err
 }
 
 // ErrorNoSuchKey predefined error
@@ -71,44 +92,8 @@ func (s *Stash) Delete(key string) error {
 	return nil
 }
 
-// Restore not implement
+// RestoreFromTranLog
 // TODO: restore from transaction log
-func (s *Stash) Restore() error {
-	return nil
+func (s *Stash) RestoreFromTranLog() error {
+	return errors.New("not implemented")
 }
-
-/*
-func (s *Stash) Restore() error {
-	var err error
-
-	events, errors := store.transact.ReadEvents()
-	count, ok, e := 0, true, Event{}
-
-	for ok && err == nil {
-		select {
-		case err, ok = <-errors:
-
-		case e, ok = <-events:
-			switch e.EventType {
-			case EventDelete: // Got a DELETE event!
-				err = store.Delete(e.Key)
-				count++
-			case EventPut: // Got a PUT event!
-				err = store.Put(e.Key, e.Value)
-				count++
-			}
-		}
-	}
-
-	log.Printf("%d events replayed\n", count)
-
-	store.transact.Run()
-
-	go func() {
-		for err := range store.transact.Err() {
-			log.Print(err)
-		}
-	}()
-
-	return err
-}*/

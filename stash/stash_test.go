@@ -1,20 +1,29 @@
 package stash
 
 import (
-	"fmt"
+	"os"
+	"reflect"
 	"testing"
 	"testing/quick"
 )
 
+type testContext struct {
+	fileName string
+	test01m  map[string]string
+	test01b  []byte
+}
+
 var config quick.Config
-var stash *Stash
+var context testContext
 
 func init() {
-	stash = NewStash()
+	context.fileName = "/tmp/stash.json"
+	context.test01m = map[string]string{"key1": "value1", "key2": "100"}
+	context.test01b = []byte("{\"key1\":\"value1\",\"key2\":\"100\"}")
 }
 
 func TestStash_Put(t *testing.T) {
-	// store data
+	stash := NewStash()
 	f := func(key, val string) bool {
 		ok := stash.Put(key, val)
 		if ok != nil {
@@ -28,6 +37,7 @@ func TestStash_Put(t *testing.T) {
 }
 
 func TestStash_Get(t *testing.T) {
+	stash := NewStash()
 	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -51,6 +61,7 @@ func TestStash_Get(t *testing.T) {
 }
 
 func TestStash_Delete(t *testing.T) {
+	stash := NewStash()
 	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -78,28 +89,84 @@ func TestStash_Delete(t *testing.T) {
 	}
 }
 
-func TestStash_Read(t *testing.T) {
-	s := []byte("{\"key1\":\"val1\",\"key2\":\"100\"}")
-	_, err := stash.Read(s)
+func TestStash_marshal(t *testing.T) {
+	stash := NewStash()
+	var err error
+	for key, val := range context.test01m {
+		err = stash.Put(key, val)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	var p []byte
+	p, err = stash.marshal()
 	if err != nil {
 		t.Error(err)
 	}
-	if stash.m["key1"] != "val1" && stash.m["key2"] != "100" {
-		t.Error("Read wrong data")
+	if !reflect.DeepEqual(p, context.test01b) {
+		t.Error(p, " != ", context.test01b)
 	}
 }
 
-func TestStash_Write(t *testing.T) {
-	err := stash.Put("key1", "value1")
+func TestStash_unmarshal(t *testing.T) {
+	stash := NewStash()
+	err := stash.unmarshal(context.test01b)
 	if err != nil {
 		t.Error(err)
 	}
-	err = stash.Put("key2", "value2")
+	for key, val := range context.test01m {
+		if stash.m[key] != val {
+			t.Error(key, stash.m[key], val)
+		}
+	}
+}
+
+func TestStash_Backup(t *testing.T) {
+	f, err := os.OpenFile(context.fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		t.Error(err)
 	}
-	_, err = fmt.Fprintln(stash)
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}(f)
+
+	stash := NewStash()
+	for key, val := range context.test01m {
+		err = stash.Put(key, val)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	err = stash.Backup(f)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestStash_Restore(t *testing.T) {
+	f, err := os.OpenFile(context.fileName, os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		t.Error(err)
+	}
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}(f)
+
+	TestStash_Backup(t)
+	stash := NewStash()
+	err = stash.Restore(f)
+	if err != nil {
+		t.Error(err)
+	}
+	for key, val := range context.test01m {
+		if stash.m[key] != val {
+			t.Error(key, stash.m[key], val)
+		}
 	}
 }
