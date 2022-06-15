@@ -21,9 +21,7 @@ type Stash struct {
 
 // NewStash constructor
 func NewStash() *Stash {
-	return &Stash{
-		m: make(map[string]string),
-	}
+	return &Stash{m: make(map[string]string)}
 }
 
 // marshal read from Stash into p

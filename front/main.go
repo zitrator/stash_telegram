@@ -1,27 +1,17 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/zitrator/stash_telegram/stash"
+	"github.com/zitrator/stash_telegram/stashrest"
+	"log"
 )
 
-var jsonData = []byte("{ \"name\":\"patrik\", \"age\":10 }")
+type Front interface {
+	Start(s *stash.Stash) error
+}
 
 func main() {
-	myStash := stash.Stash{}
-	fmt.Println(myStash)
+	myStash := stash.NewStash()
 
-	var f interface{}
-	err := json.Unmarshal(jsonData, &f)
-
-	if err != nil {
-		fmt.Println("err")
-	}
-
-	mj := f.(map[string]interface{})
-	fmt.Println(f)
-	fmt.Println(mj["name"])
-	fmt.Println(mj["age"])
-	fmt.Println(mj["none"])
+	log.Fatal(stashrest.NewStashRest().Start(myStash))
 }
