@@ -7,6 +7,8 @@ import (
 	"testing/quick"
 )
 
+const testDatabase = "test_db"
+
 type testContext struct {
 	fileName string
 	test01m  map[string]string
@@ -23,7 +25,7 @@ func init() {
 }
 
 func TestStash_Put(t *testing.T) {
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	f := func(key, val string) bool {
 		ok := stash.Put(key, val)
 		if ok != nil {
@@ -37,7 +39,7 @@ func TestStash_Put(t *testing.T) {
 }
 
 func TestStash_Get(t *testing.T) {
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -61,7 +63,7 @@ func TestStash_Get(t *testing.T) {
 }
 
 func TestStash_Delete(t *testing.T) {
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -90,7 +92,7 @@ func TestStash_Delete(t *testing.T) {
 }
 
 func TestStash_marshal(t *testing.T) {
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	var err error
 	for key, val := range context.test01m {
 		err = stash.Put(key, val)
@@ -109,7 +111,7 @@ func TestStash_marshal(t *testing.T) {
 }
 
 func TestStash_unmarshal(t *testing.T) {
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	err := stash.unmarshal(context.test01b)
 	if err != nil {
 		t.Error(err)
@@ -133,7 +135,7 @@ func TestStash_Backup(t *testing.T) {
 		}
 	}(f)
 
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	for key, val := range context.test01m {
 		err = stash.Put(key, val)
 		if err != nil {
@@ -159,7 +161,7 @@ func TestStash_Restore(t *testing.T) {
 	}(f)
 
 	TestStash_Backup(t)
-	stash := NewStash()
+	stash := NewStash(testDatabase)
 	err = stash.Restore(f)
 	if err != nil {
 		t.Error(err)

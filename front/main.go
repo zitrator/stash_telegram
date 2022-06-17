@@ -11,7 +11,6 @@ type Front interface {
 }
 
 func main() {
-	myStash := stash.NewStash()
-
-	log.Fatal(stashrest.NewStashRest().Start(myStash))
+	log.Println("Starting stashes ...")
+	log.Fatal(stashrest.NewStashRest().Start("my_first_db"))
 }

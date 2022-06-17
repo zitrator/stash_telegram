@@ -21,8 +21,8 @@ func NewStashRest() *stashRest {
 
 // Start type method stashRest
 // TODO: port from environment variable
-func (sr *stashRest) Start(s *stash.Stash) error {
-	sr.stash = stash.NewStash()
+func (sr *stashRest) Start(s string) error {
+	sr.stash = stash.GetDatabase().GetStash(s)
 
 	router := mux.NewRouter()
 	router.Use(sr.loggingMiddleware)

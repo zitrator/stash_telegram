@@ -38,6 +38,6 @@ Accept: text/plain
 > {%
 client.test("control_01", function() {
   client.assert(response.status === 200, "Response status is not 200");
-  client.assert(response.body == "Value for control_01")
+  client.assert(response.body === "Value for control_01")
 })
  %}

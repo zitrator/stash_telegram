@@ -7,21 +7,25 @@ import (
 	"sync"
 )
 
-// TODO: encrypt data o
+// todo: multiple stash support
+// todo: encrypt data
+// todo: transaction log
 
 import (
 	"errors"
 )
 
-// Stash in-memory storage
+// Stash in-memory key value storage
 type Stash struct {
 	sync.RWMutex
-	m map[string]string
+	m       map[string]string
+	id      string
+	changed bool
 }
 
 // NewStash constructor
-func NewStash() *Stash {
-	return &Stash{m: make(map[string]string)}
+func NewStash(id string) *Stash {
+	return &Stash{m: make(map[string]string), id: id, changed: false}
 }
 
 // marshal read from Stash into p
@@ -31,27 +35,36 @@ func (s *Stash) marshal() (p []byte, err error) {
 }
 
 // unmarshal from p to the Stash
-func (s *Stash) unmarshal(p []byte) (err error) {
-	err = json.Unmarshal(p, &s.m)
+func (s *Stash) unmarshal(p []byte) error {
+	err := json.Unmarshal(p, &s.m)
 	return err
 }
 
 // Backup data
 func (s *Stash) Backup(w io.Writer) error {
+	s.Lock()
 	p, err := s.marshal()
 	if err != nil {
+		s.Unlock()
 		return err
 	}
+	s.changed = false
+	s.Unlock()
 	_, err = w.Write(p)
+
 	return nil
 }
 
-func (s *Stash) Restore(r io.Reader) (err error) {
+func (s *Stash) Restore(r io.Reader) error {
 	p, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
+	s.Lock()
 	err = s.unmarshal(p)
+	s.changed = false
+	s.Unlock()
+
 	return err
 }
 
@@ -63,8 +76,8 @@ func (s *Stash) Put(key, data string) error {
 	s.Lock()
 	s.m[key] = data
 	s.Unlock()
+	s.changed = true
 
-	// TODO: transaction log
 	return nil
 }
 
@@ -85,13 +98,7 @@ func (s *Stash) Delete(key string) error {
 	s.Lock()
 	delete(s.m, key)
 	s.Unlock()
+	s.changed = true
 
-	// TODO: transaction log
 	return nil
-}
-
-// RestoreFromTranLog
-// TODO: restore from transaction log
-func (s *Stash) RestoreFromTranLog() error {
-	return errors.New("not implemented")
 }
