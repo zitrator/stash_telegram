@@ -1,18 +1,18 @@
 ### GET request with a header
-PUT http://localhost:8080/stash/100
+PUT http://localhost:8080/s/100
 Accept: text/plain
 
 Value for
 key 100
 
 > {%
-client.test("control_01", function() {
+client.test("key 100", function() {
   client.assert(response.status === 201, "Response status is not 201");
 })
  %}
 
 ###
-PUT http://localhost:8080/stash/200
+PUT http://localhost:8080/s/200
 Accept: text/plain
 
 Value for Значение
@@ -20,23 +20,23 @@ key 200 ключ 200
 
 
 > {%
-client.test("control_01", function() {
+client.test("key 200", function() {
   client.assert(response.status === 201, "Response status is not 201");
 })
  %}
 
 ### Put and get test
-PUT http://localhost:8080/stash/control_01
+PUT http://localhost:8080/s/control_01
 Accept: text/plain
 
 Value for control_01
 
 ###
-GET http://localhost:8080/stash/control_01
+GET http://localhost:8080/s/control_01
 Accept: text/plain
 
 > {%
-client.test("control_01", function() {
+client.test("key control_01", function() {
   client.assert(response.status === 200, "Response status is not 200");
   client.assert(response.body === "Value for control_01")
 })

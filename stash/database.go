@@ -2,18 +2,22 @@ package stash
 
 import (
 	"bytes"
+	"errors"
+	"io/ioutil"
 	"log"
 	"os"
 	"sync"
 	"time"
 )
 
-const systemStashName = ".system"
-const stashesFolderVarName = "STASHES_ROOT"
-const syncDataEvery = 10 * time.Second
+// todo: encrypt data
+// todo: gzip data
 
-// todo: singleton
-// todo: sync data in goroutine
+const (
+	systemStashName      = ".system"
+	stashesFolderVarName = "STASHES_ROOT"
+	syncDataEvery        = 10 * time.Second
+)
 
 type Database struct {
 	sync.RWMutex
@@ -24,9 +28,10 @@ type Database struct {
 	quit    chan interface{}
 }
 
-// instance one instance for all stashes
-var instance *Database
+// database one instance for all stashes
+var database *Database
 
+// init database instance and restore stashes
 func init() {
 	folderName := os.Getenv(stashesFolderVarName)
 	if folderName == "" {
@@ -34,39 +39,41 @@ func init() {
 	}
 
 	var err error
-	instance, err = initNewDatabase(folderName)
+	database, err = initNewDatabase(folderName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	instance.ticker = time.NewTicker(syncDataEvery)
+	database.ticker = time.NewTicker(syncDataEvery)
 	go tickerFunc()
 }
 
+// tickerFunc save data to disk every syncDataEvery
 func tickerFunc() {
 	for {
 		select {
-		case <-instance.ticker.C:
-			instance.RLock()
-			cs := make(map[string]*Stash)
-			for key, ptr := range instance.stashes {
-				cs[key] = ptr
+		case <-database.ticker.C:
+			database.RLock()
+			cm := make(map[string]*Stash)
+			for key, ptr := range database.stashes {
+				cm[key] = ptr
 			}
-			instance.RUnlock()
-			for key, ptr := range cs {
-				saveStash(instance.folder+"/"+key, ptr)
+			database.RUnlock()
+			for fn, s := range cm {
+				saveStash(s, database.folder+"/"+fn)
 			}
-		case <-instance.quit:
-			instance.ticker.Stop()
+		case <-database.quit:
+			database.ticker.Stop()
 			return
 		}
 	}
 }
 
-func saveStash(key string, ptr *Stash) {
-	if !ptr.changed {
+// saveStash save the stash (*st) to file (fn)
+func saveStash(st *Stash, fn string) {
+	if !st.ch {
 		return
 	}
-	fo, err := os.Create(key)
+	fo, err := os.Create(fn)
 	if err != nil {
 		log.Println(err)
 	}
@@ -77,17 +84,17 @@ func saveStash(key string, ptr *Stash) {
 		}
 	}()
 
-	err = ptr.Backup(fo)
+	err = st.Backup(fo)
 	if err != nil {
 		log.Println(err)
 	} else {
-		log.Printf("Stash %s was saved", key)
+		log.Printf("Stash %st was saved", fn)
 	}
 }
 
-// GetDatabase init new database
+// GetDatabase return the initialized instance
 func GetDatabase() *Database {
-	return instance
+	return database
 }
 
 // GetStash pointer, the stash will be created if it doesn't exist
@@ -95,34 +102,46 @@ func (db *Database) GetStash(id string) *Stash {
 	// todo: block the system stash
 	db.once.Do(func() {
 		if stash := db.stashes[id]; stash == nil {
-			db.stashes[id] = NewStash(id)
+			db.stashes[id] = NewStash()
 		}
 	})
 	return db.stashes[id]
 }
 
-// initNewDatabase
+// initNewDatabase initialize and return the new database
 func initNewDatabase(folderName string) (*Database, error) {
+	if database != nil {
+		return database, errors.New("the database has already been initialized, this call has been ignored")
+	}
 
 	if _, err := os.Stat(folderName); err != nil {
 		if os.IsNotExist(err) {
+			// the folder doesn't exist
 			if err = os.MkdirAll(folderName, 0750); err != nil {
 				log.Fatal(err)
 			}
 		} else {
+			// the unknown fatal error
 			log.Fatal(err)
 		}
 	}
 
 	database := Database{folder: folderName, stashes: make(map[string]*Stash)}
-	stashPtr := NewStash(systemStashName)
-	if data, err := os.ReadFile(systemStashName); err == nil {
-		if err = stashPtr.Restore(bytes.NewReader(data)); err != nil {
-			log.Println(err)
+	if files, err := ioutil.ReadDir(folderName); err == nil {
+		for _, file := range files {
+			st := NewStash()
+			if data, err := os.ReadFile(folderName + "/" + file.Name()); err == nil {
+				if err = st.Restore(bytes.NewReader(data)); err != nil {
+					log.Println(err)
+				}
+				database.stashes[file.Name()] = st
+				log.Println("the file ", file.Name(), " was restored")
+			} else {
+				log.Println("the file ", file.Name(), " was ignored: ", err)
+			}
 		}
 	} else {
-		log.Println(err)
+		log.Fatal(err)
 	}
-	database.stashes[systemStashName] = stashPtr
 	return &database, nil
 }

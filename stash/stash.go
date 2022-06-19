@@ -7,8 +7,6 @@ import (
 	"sync"
 )
 
-// todo: multiple stash support
-// todo: encrypt data
 // todo: transaction log
 
 import (
@@ -18,14 +16,15 @@ import (
 // Stash in-memory key value storage
 type Stash struct {
 	sync.RWMutex
-	m       map[string]string
-	id      string
-	changed bool
+	// a map for the stash
+	m map[string]string
+	// true if the data has been changed
+	ch bool
 }
 
 // NewStash constructor
-func NewStash(id string) *Stash {
-	return &Stash{m: make(map[string]string), id: id, changed: false}
+func NewStash() *Stash {
+	return &Stash{m: make(map[string]string), ch: false}
 }
 
 // marshal read from Stash into p
@@ -48,7 +47,7 @@ func (s *Stash) Backup(w io.Writer) error {
 		s.Unlock()
 		return err
 	}
-	s.changed = false
+	s.ch = false
 	s.Unlock()
 	_, err = w.Write(p)
 
@@ -62,7 +61,7 @@ func (s *Stash) Restore(r io.Reader) error {
 	}
 	s.Lock()
 	err = s.unmarshal(p)
-	s.changed = false
+	s.ch = false
 	s.Unlock()
 
 	return err
@@ -76,7 +75,7 @@ func (s *Stash) Put(key, data string) error {
 	s.Lock()
 	s.m[key] = data
 	s.Unlock()
-	s.changed = true
+	s.ch = true
 
 	return nil
 }
@@ -98,7 +97,7 @@ func (s *Stash) Delete(key string) error {
 	s.Lock()
 	delete(s.m, key)
 	s.Unlock()
-	s.changed = true
+	s.ch = true
 
 	return nil
 }

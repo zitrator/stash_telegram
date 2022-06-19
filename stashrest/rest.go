@@ -10,34 +10,40 @@ import (
 	"github.com/zitrator/stash_telegram/stash"
 )
 
-// stashRest
 type stashRest struct {
 	stash *stash.Stash
 }
 
-func NewStashRest() *stashRest {
-	return &stashRest{}
+func NewStashRest(st *stash.Stash) *stashRest {
+	return &stashRest{stash: st}
 }
 
-// Start type method stashRest
-// TODO: port from environment variable
-func (sr *stashRest) Start(s string) error {
-	sr.stash = stash.GetDatabase().GetStash(s)
-
+// Start initialize and start the mux.Router
+func (sr *stashRest) Start() error {
 	router := mux.NewRouter()
 	router.Use(sr.loggingMiddleware)
 
-	router.HandleFunc("/stash/{key}", sr.keyValueGetHandler).Methods("GET")
-	router.HandleFunc("/stash/{key}", sr.keyValuePutHandler).Methods("PUT")
-	router.HandleFunc("/stash/{key}", sr.keyValueDeleteHandler).Methods("DELETE")
+	router.HandleFunc("/s/{key}", sr.keyValueGetHandler).Methods("GET")
+	router.HandleFunc("/s/{key}", sr.keyValuePutHandler).Methods("PUT")
+	router.HandleFunc("/s/{key}", sr.keyValueDeleteHandler).Methods("DELETE")
 
-	router.HandleFunc("/stash", sr.notAllowedHandler)
-	router.HandleFunc("/stash/{key}", sr.notAllowedHandler)
+	// todo: add support for multi stashes
+	//router.HandleFunc("/s/{stash}/{key}", sr.keyValueGetHandler).Methods("GET")
+	//router.HandleFunc("/s/{stash}/{key}", sr.keyValuePutHandler).Methods("PUT")
+	//router.HandleFunc("/s/{stash}/{key}", sr.keyValueDeleteHandler).Methods("DELETE")
 
+	//router.HandleFunc("/s/{stash}/{key}", sr.keyValueGetHandler).Methods("GET")
+	//router.HandleFunc("/s/{stash}/{key}", sr.keyValuePutHandler).Methods("PUT")
+	//router.HandleFunc("/s/{stash}/{key}", sr.keyValueDeleteHandler).Methods("DELETE")
+
+	router.HandleFunc("/s", sr.notAllowedHandler)
+	router.HandleFunc("/s/{key}", sr.notAllowedHandler)
+
+	// todo: port from environment variable
 	return http.ListenAndServe(":8080", router)
 }
 
-// loggingMiddleware type method stashRest
+// loggingMiddleware the handler for logging requests
 func (sr *stashRest) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.Method, r.RequestURI)

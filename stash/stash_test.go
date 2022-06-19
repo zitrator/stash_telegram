@@ -25,7 +25,7 @@ func init() {
 }
 
 func TestStash_Put(t *testing.T) {
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	f := func(key, val string) bool {
 		ok := stash.Put(key, val)
 		if ok != nil {
@@ -39,7 +39,7 @@ func TestStash_Put(t *testing.T) {
 }
 
 func TestStash_Get(t *testing.T) {
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -63,7 +63,7 @@ func TestStash_Get(t *testing.T) {
 }
 
 func TestStash_Delete(t *testing.T) {
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	// store the data
 	put := func(key, val string) bool {
 		ok := stash.Put(key, val)
@@ -92,7 +92,7 @@ func TestStash_Delete(t *testing.T) {
 }
 
 func TestStash_marshal(t *testing.T) {
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	var err error
 	for key, val := range context.test01m {
 		err = stash.Put(key, val)
@@ -111,7 +111,7 @@ func TestStash_marshal(t *testing.T) {
 }
 
 func TestStash_unmarshal(t *testing.T) {
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	err := stash.unmarshal(context.test01b)
 	if err != nil {
 		t.Error(err)
@@ -135,7 +135,7 @@ func TestStash_Backup(t *testing.T) {
 		}
 	}(f)
 
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	for key, val := range context.test01m {
 		err = stash.Put(key, val)
 		if err != nil {
@@ -161,7 +161,7 @@ func TestStash_Restore(t *testing.T) {
 	}(f)
 
 	TestStash_Backup(t)
-	stash := NewStash(testDatabase)
+	stash := NewStash()
 	err = stash.Restore(f)
 	if err != nil {
 		t.Error(err)
