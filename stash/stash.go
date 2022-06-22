@@ -13,6 +13,8 @@ import (
 	"errors"
 )
 
+var ErrorNoSuchKey = errors.New("no such key")
+
 // Stash in-memory key value storage
 type Stash struct {
 	sync.RWMutex
@@ -27,19 +29,19 @@ func NewStash() *Stash {
 	return &Stash{m: make(map[string]string), ch: false}
 }
 
-// marshal read from Stash into p
+// marshal Stash => p
 func (s *Stash) marshal() (p []byte, err error) {
 	p, err = json.Marshal(s.m)
 	return p, err
 }
 
-// unmarshal from p to the Stash
+// unmarshal p => Stash
 func (s *Stash) unmarshal(p []byte) error {
 	err := json.Unmarshal(p, &s.m)
 	return err
 }
 
-// Backup data
+// Backup the stash data
 func (s *Stash) Backup(w io.Writer) error {
 	s.Lock()
 	p, err := s.marshal()
@@ -49,11 +51,12 @@ func (s *Stash) Backup(w io.Writer) error {
 	}
 	s.ch = false
 	s.Unlock()
-	_, err = w.Write(p)
 
-	return nil
+	_, err = w.Write(p)
+	return err
 }
 
+// Restore the stash data
 func (s *Stash) Restore(r io.Reader) error {
 	p, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -67,10 +70,7 @@ func (s *Stash) Restore(r io.Reader) error {
 	return err
 }
 
-// ErrorNoSuchKey predefined error
-var ErrorNoSuchKey = errors.New("no such key")
-
-// Put data in Stash
+// Put the data in the Stash
 func (s *Stash) Put(key, data string) error {
 	s.Lock()
 	s.m[key] = data
@@ -80,7 +80,7 @@ func (s *Stash) Put(key, data string) error {
 	return nil
 }
 
-// Get data from Stash
+// Get the data from the Stash
 func (s *Stash) Get(key string) (string, error) {
 	s.RLock()
 	value, ok := s.m[key]
@@ -92,7 +92,7 @@ func (s *Stash) Get(key string) (string, error) {
 	return value, nil
 }
 
-// Delete data from stash
+// Delete the data from the stash
 func (s *Stash) Delete(key string) error {
 	s.Lock()
 	delete(s.m, key)

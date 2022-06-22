@@ -1,5 +1,5 @@
 ### GET request with a header
-PUT http://localhost:8080/s/100
+PUT http://localhost:8080/s/my_first_db/100
 Accept: text/plain
 
 Value for
@@ -12,7 +12,7 @@ client.test("key 100", function() {
  %}
 
 ###
-PUT http://localhost:8080/s/200
+PUT http://localhost:8080/s/my_first_db/200
 Accept: text/plain
 
 Value for Значение
@@ -26,18 +26,51 @@ client.test("key 200", function() {
  %}
 
 ### Put and get test
-PUT http://localhost:8080/s/control_01
+PUT http://localhost:8080/s/my_first_db/control_01
 Accept: text/plain
 
 Value for control_01
 
 ###
-GET http://localhost:8080/s/control_01
+GET http://localhost:8080/s/my_first_db/control_01
 Accept: text/plain
 
 > {%
 client.test("key control_01", function() {
   client.assert(response.status === 200, "Response status is not 200");
   client.assert(response.body === "Value for control_01")
+})
+ %}
+
+
+###
+GET http://localhost:8080/s/one.json/control_01
+Accept: text/plain
+
+> {%
+client.test("key control_01", function() {
+  client.assert(response.status === 404, "Response status is not 200");
+})
+ %}
+
+
+### GET request with a header
+GET http://localhost:8080/s/my_first_db
+Accept: text/plain
+
+> {%
+client.test("key 100", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+})
+ %}
+
+
+### DELETE
+DELETE http://localhost:8080/s/my_first_db
+Accept: text/plain
+
+> {%
+client.test("key 100", function() {
+  client.assert(response.status === 200, "Response status is not 200");
 })
  %}

@@ -12,5 +12,5 @@ type Front interface {
 
 func main() {
 	log.Println("Starting stashes ...")
-	log.Fatal(stashrest.NewStashRest(stash.GetDatabase().GetStash("my_first_db")).Start())
+	log.Fatal(stashrest.NewStashRest(stash.GetDatabase()).Start())
 }

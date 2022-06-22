@@ -19,9 +19,10 @@ const (
 	syncDataEvery        = 10 * time.Second
 )
 
+var ErrorNoSuchStash = errors.New("no such stash")
+
 type Database struct {
 	sync.RWMutex
-	once    sync.Once
 	stashes map[string]*Stash
 	folder  string
 	ticker  *time.Ticker
@@ -97,17 +98,6 @@ func GetDatabase() *Database {
 	return database
 }
 
-// GetStash pointer, the stash will be created if it doesn't exist
-func (db *Database) GetStash(id string) *Stash {
-	// todo: block the system stash
-	db.once.Do(func() {
-		if stash := db.stashes[id]; stash == nil {
-			db.stashes[id] = NewStash()
-		}
-	})
-	return db.stashes[id]
-}
-
 // initNewDatabase initialize and return the new database
 func initNewDatabase(folderName string) (*Database, error) {
 	if database != nil {
@@ -132,16 +122,36 @@ func initNewDatabase(folderName string) (*Database, error) {
 			st := NewStash()
 			if data, err := os.ReadFile(folderName + "/" + file.Name()); err == nil {
 				if err = st.Restore(bytes.NewReader(data)); err != nil {
-					log.Println(err)
+					log.Println("the stash file", file.Name(), "was ignored:", err)
+					continue
 				}
 				database.stashes[file.Name()] = st
-				log.Println("the file ", file.Name(), " was restored")
+				log.Println("the stash file", file.Name(), "was restored")
 			} else {
-				log.Println("the file ", file.Name(), " was ignored: ", err)
+				log.Println("the stash file", file.Name(), "was ignored:", err)
 			}
 		}
 	} else {
 		log.Fatal(err)
 	}
 	return &database, nil
+}
+
+// Get return *Stash. The stash will be created if it doesn't exist
+func (db *Database) Get(id string) (st *Stash, ok bool) {
+	db.Lock()
+	if st, ok = db.stashes[id]; !ok {
+		st = NewStash()
+		db.stashes[id] = st
+	}
+	db.Unlock()
+	return st, ok
+}
+
+// Delete the stash from the database
+func (db *Database) Delete(sn string) error {
+	db.Lock()
+	delete(db.stashes, sn)
+	db.Unlock()
+	return os.Remove(db.folder + "/" + sn)
 }
